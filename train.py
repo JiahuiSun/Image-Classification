@@ -16,7 +16,8 @@ def main(args, logger):
     # ================ seed and device ===================
     np.random.seed(42)
     torch.manual_seed(42)
-    if args.cuda:
+    # if args.cuda:
+    if True:
         torch.cuda.manual_seed_all(42)
         device = 'cuda'
     else:
@@ -31,8 +32,8 @@ def main(args, logger):
     # ================== Loss, optimizer and scheduler ===============
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5,
-                        patience=10, verbose=False, threshold=0.0001)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1,
+                        patience=10, verbose=False, threshold=1e-4)
     # ================== Training and validation ===============
     start_epoch = 0
     if args.resume:
@@ -81,7 +82,7 @@ def main(args, logger):
                 loss = criterion(out, lab)
                 val_loss += loss.item()
         val_loss /= len(val_loader)
-        val_acc /= len(val_loader)
+        val_acc /= len(val_loader.dataset)
         val_loss_his.append(val_loss)
         val_acc_his.append(val_acc)
         # =================== adjust lr, save model and print log ================
@@ -95,10 +96,11 @@ def main(args, logger):
                 "model_state": model.state_dict(),
                 "optimizer_state": optimizer.state_dict(),
                 "scheduler_state": scheduler.state_dict(),
-                "best_iou": best_acc,
+                "best_acc": best_acc,
             }
         save_path = pjoin(args.save_dir, f"{args.model}_best_model.pkl")
         torch.save(state, save_path)
+    logger.write(f'Training finished, best acc: {best_acc:.3f}') 
 
 
 if __name__ == '__main__':
@@ -114,6 +116,6 @@ if __name__ == '__main__':
     parser.add_argument('--print-freq', type=int, default=50)
     args = parser.parse_args()
     logger = Logger(pjoin(args.save_dir, args.model+'_train.log'))
-    logger.write(f'Config: {args}')
+    logger.write(f'\nConfig: {args}')
 
     main(args, logger)

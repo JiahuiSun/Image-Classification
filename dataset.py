@@ -33,7 +33,7 @@ class Mnist(object):
             with open(img_path, 'rb') as imgpath:
                 magic, num, rows, cols = struct.unpack('>IIII', imgpath.read(16))
                 test_x = np.fromfile(imgpath, dtype=np.uint8).reshape(len(test_y), 1, 28, 28) 
-            test_x = torch.from_numpy(test_x)
+            test_x = torch.from_numpy(test_x).type(torch.FloatTensor)
             test_y = torch.from_numpy(test_y).type(torch.LongTensor)
             self.test_dataset = torch.utils.data.TensorDataset(test_x, test_y)
             
