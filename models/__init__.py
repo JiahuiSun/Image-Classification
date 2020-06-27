@@ -2,8 +2,9 @@
 from .vgg import *
 
 __factory = {
-
+    'dnn': DNN,
     'vgg': VGGNet,
+    'alex': AlexNet,
 }
 
 

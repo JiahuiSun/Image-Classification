@@ -5,7 +5,7 @@ import numpy as np
 import argparse
 from os.path import join as pjoin
 import time
-# from tensorboardX import SummaryWriter
+from tensorboardX import SummaryWriter
 
 from dataset import Mnist
 from utils import Logger, AverageMeter, RunningScore
@@ -24,7 +24,7 @@ def main(args):
     logdir = pjoin(args.save_dir, args.model, f'lr{lr}', f'{args.optim}', f'patience{args.patience}')
     logger = Logger(pjoin(logdir, f'{stamp}.log'))
     logger.write(f'\nTraining configs: {args}')
-    # writer = SummaryWriter(log_dir=logdir)
+    writer = SummaryWriter(log_dir=logdir)
 
     # ================= load data ====================
     mnist = Mnist(args.data_dir, mode='train')
@@ -84,7 +84,7 @@ def main(args):
                 lab = lab.to(device)
                 out = model(img)
                 pred = out.argmax(dim=1, keepdim=True)
-                val_acc = pred.eq(lab.view_as(pred)).mean().item()
+                val_acc = pred.eq(lab.view_as(pred)).sum().item() / len(lab)
                 loss = criterion(out, lab)
                 val_loss_meter.update(loss.item())
                 val_acc_meter.update(val_acc)
@@ -94,9 +94,9 @@ def main(args):
         scheduler.step(val_acc_meter.avg)
         logger.write(f'Epoch: {epoch:2d} Train Loss: {train_loss_meter.avg:.4f}  Val Loss: {val_loss_meter.avg:.4f}  Val Acc: {val_acc_meter.avg:.4f}')
         logger.write(f'Train cost: {round(mid-st)}s Val cost: {round(end-mid)}s')
-        # writer.add_scalar('train/loss', train_loss_meter.avg, epoch)
-        # writer.add_scalar("val/loss", val_loss_meter.avg, epoch)
-        # writer.add_scalar('val/acc', val_acc_meter.avg, epoch)
+        writer.add_scalar('train/loss', train_loss_meter.avg, epoch)
+        writer.add_scalar("val/loss", val_loss_meter.avg, epoch)
+        writer.add_scalar('val/acc', val_acc_meter.avg, epoch)
 
         if val_acc_meter.avg > best_acc:
             best_acc = val_acc
@@ -123,8 +123,8 @@ if __name__ == '__main__':
     parser.add_argument('--data-dir', type=str, default='../dataset/MNIST')
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--resume', type=str, default=None)
-    parser.add_argument('--batch-size', type=int, default=64)
-    parser.add_argument('--n_epoch', type=int, default=50)
+    parser.add_argument('--batch-size', type=int, default=128)
+    parser.add_argument('--n_epoch', type=int, default=30)
     parser.add_argument('--save-dir', type=str, default='saved')
     parser.add_argument('--print-freq', type=int, default=50)
 
